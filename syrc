@@ -1,2 +1,2 @@
 source venv/bin/activate
-export PYTHON_PATH=`pwd`/sy:$PYTHON_PATH
+export PYTHONPATH=`pwd`:$PYTHONPATH
