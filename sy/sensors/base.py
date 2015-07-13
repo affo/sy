@@ -6,6 +6,9 @@ import json
 
 LOG = log.get(__name__)
 
+def get_uid(sensor_class, cid):
+    return '_'.join(self.cid, sensor_class.__name__.lower())
+
 class BaseSensor(Greenlet):
     """
     Base class for sensors.  
@@ -22,6 +25,7 @@ class BaseSensor(Greenlet):
     def __init__(self, cid, spacing=0.1):
         Greenlet.__init__(self)
         self.cid = cid
+        self.uid = get_uid(self.__class__, cid)
         self.spacing = spacing
         self._lock = BoundedSemaphore()
         self._lock.acquire() # locking semaphore
