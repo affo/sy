@@ -1,4 +1,5 @@
 from sy.sensors import base
+from datetime import datetime
 
 class DummySensor(base.BaseSensor):
     index = 0
@@ -21,6 +22,6 @@ class DummyRMQSensor(base.BaseRMQSensor):
 class DummyRedisSensor(base.BaseRedisSensor):
     def _get(self):
         return {
-            'i': 'am',
             'dummy': 'data',
+            'ts': str(datetime.now())
         }
