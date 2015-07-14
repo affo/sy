@@ -1,4 +1,7 @@
+from sy.tests import dummy
+
 TYPES = {
-    # TODO something like:
-    # 'cpumem': sy.sensors.cpumem.CpuMemSensor
+    'dummy': dummy.DummySensor,
+    'dummy_redis': dummy.DummyRedisSensor,
+    'dummy_rmq': dummy.DummyRMQSensor,
 }
