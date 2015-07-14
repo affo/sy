@@ -66,12 +66,16 @@ class BaseSensor(Greenlet):
 
 
 class BaseRMQSensor(BaseSensor):
+    def _gen_routing_key(self):
+        return self.__class__.__name__.lower() + '.' + str(self.cid)
+
     def __init__(self, cid):
         super(BaseRMQSensor, self).__init__(cid)
         # getting values from config
         rabbit_host = config.get('rabbit_host')
         rabbit_port = config.get('rabbit_port')
         self.rmqapi = api.RMQPublisher(
+            self._gen_routing_key(),
             rabbit_host=rabbit_host,
             rabbit_port=rabbit_port
         )

@@ -25,10 +25,9 @@ class RMQBase(object):
 
 
 class RMQPublisher(RMQBase):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, routing_key, *args, **kwargs):
         super(RMQPublisher, self).__init__(*args, **kwargs)
-        routing_key = [KEY_TOPIC, self.__class__.__name__.lower()]
-        self.routing_key='.'.join(routing_key)
+        self.routing_key='.'.join([KEY_TOPIC, routing_key])
 
     def publish(self, data):
         self._channel.basic_publish(
@@ -40,7 +39,7 @@ class RMQPublisher(RMQBase):
 
 
 class RMQConsumer(RMQBase):
-    def __init__(self, topic='*', *args, **kwargs):
+    def __init__(self, topic='#', *args, **kwargs):
         super(RMQConsumer, self).__init__(*args, **kwargs)
         q = self._channel.queue_declare(exclusive=True)
         self._q_name = q.method.queue
