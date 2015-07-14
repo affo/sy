@@ -21,10 +21,10 @@ OPTS = {
     'redis_port': ('6379', _to_int),
 }
 
-config = cp.ConfigParser(defaults={k: v[0] for k, v in OPTS.items()})
-config.readfp(open(CONFIG_FILE))
+CONF = cp.ConfigParser(defaults={k: v[0] for k, v in OPTS.items()})
+CONF.readfp(open(CONFIG_FILE))
 
 def get(option, section='DEFAULT'):
-    value = config.get(section, option)
+    value = CONF.get(section, option)
     cast_fn = OPTS[option][1]()
     return cast_fn(value)

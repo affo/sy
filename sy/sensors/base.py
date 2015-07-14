@@ -1,13 +1,13 @@
 from gevent import sleep, Greenlet
 from gevent.coros import BoundedSemaphore
-from sy import log, api
+from sy import config, log, api
 from sy.exceptions import SensorError
 import json
 
 LOG = log.get(__name__)
 
 def get_uid(sensor_class, cid):
-    return '_'.join(self.cid, sensor_class.__name__.lower())
+    return '_'.join([cid, sensor_class.__name__.lower()])
 
 class BaseSensor(Greenlet):
     """
@@ -57,13 +57,14 @@ class BaseSensor(Greenlet):
 
 
 class BaseRMQSensor(BaseSensor):
-    def __init__(self, cid, rabbit_host='localhost', rabbit_port=5672,
-            routing_args=[], **kwargs):
+    def __init__(self, cid, **kwargs):
         super(BaseRMQSensor, self).__init__(cid, **kwargs)
+        # getting values from config
+        rabbit_host = config.get('rabbit_host')
+        rabbit_port = config.get('rabbit_port')
         self.rmqapi = api.RMQPublisher(
             rabbit_host=rabbit_host,
-            rabbit_port=rabbit_port,
-            routing_args=routing_args
+            rabbit_port=rabbit_port
         )
 
     def _store(self, data):
@@ -71,9 +72,11 @@ class BaseRMQSensor(BaseSensor):
 
 
 class BaseRedisSensor(BaseSensor):
-    def __init__(self, cid, redis_host='localhost', redis_port=6379, **kwargs):
+    def __init__(self, cid, **kwargs):
         super(BaseRedisSensor, self).__init__(cid, **kwargs)
-        self.cid = cid
+        # getting values from config
+        redis_host = config.get('redis_host')
+        redis_port = config.get('redis_port')
         self.redisapi = api.RedisAPI(redis_host, redis_port)
 
     def _store(self, data):

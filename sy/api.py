@@ -25,10 +25,9 @@ class RMQBase(object):
 
 
 class RMQPublisher(RMQBase):
-    def __init__(self, routing_args=[], *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(RMQPublisher, self).__init__(*args, **kwargs)
         routing_key = [KEY_TOPIC, self.__class__.__name__.lower()]
-        routing_key.extend(routing_args)
         self.routing_key='.'.join(routing_key)
 
     def publish(self, data):
