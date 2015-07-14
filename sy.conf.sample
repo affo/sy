@@ -1,3 +1,5 @@
 [DEFAULT]
 rabbit_host = localhost
 rabbit_port = 5672
+redis_host = localhost
+redis_port = 3679
