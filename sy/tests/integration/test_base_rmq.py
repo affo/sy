@@ -1,5 +1,5 @@
-from sy.tests.integration.base import RMQTestCase, DummyRMQSensor
-from sy.sensors.base import BaseRMQSensor
+from sy.tests.integration.base import RMQTestCase
+from sy.tests.dummy import DummyRMQSensor
 from sy.api import RMQConsumer
 
 class BaseRMQTestCase(RMQTestCase):

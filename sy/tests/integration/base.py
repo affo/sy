@@ -1,23 +1,5 @@
 import unittest
-from sy.sensors.base import BaseRMQSensor, BaseRedisSensor
 from sy.tests.integration import refresh_rabbit, refresh_redis
-
-class DummyRMQSensor(BaseRMQSensor):
-    index = 0
-
-    def _get(self):
-        i = self.index
-        self.index += 1
-        return i
-
-
-class DummyRedisSensor(BaseRedisSensor):
-    def _get(self):
-        return {
-            'i': 'am',
-            'dummy': 'data',
-        }
-
 
 class RMQTestCase(unittest.TestCase):
     def setUp(self):

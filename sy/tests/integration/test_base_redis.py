@@ -1,5 +1,5 @@
-from sy.tests.integration.base import RedisTestCase, DummyRedisSensor
-from sy.sensors.base import BaseRedisSensor
+from sy.tests.integration.base import RedisTestCase
+from sy.tests.dummy import DummyRedisSensor
 from sy.api import RedisAPI
 
 class BaseRedisTestCase(RedisTestCase):

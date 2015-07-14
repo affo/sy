@@ -1,15 +1,6 @@
 import unittest
-from sy.sensors.base import BaseSensor
 from sy.exceptions import SensorError
-
-class DummySensor(BaseSensor):
-    index = 0
-
-    def _get(self):
-        i = self.index
-        self.index += 1
-        return i
-
+from sy.tests.dummy import DummySensor
 
 class BaseSensorTest(unittest.TestCase):
 
