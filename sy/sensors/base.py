@@ -6,8 +6,11 @@ import json
 
 LOG = log.get(__name__)
 
+def get_full_class_name(clazz):
+    return clazz.__module__ + '.' + clazz.__name__
+
 def get_uid(sensor_class, cid):
-    return '_'.join([cid, sensor_class.__name__.lower()])
+    return '_'.join([cid, get_full_class_name(sensor_class)])
 
 class BaseSensor(Greenlet):
     """
@@ -22,14 +25,20 @@ class BaseSensor(Greenlet):
     Each call to `next` value is blocking for a time declared 
     on `__init__` of the sensor through `spacing` parameter.
     """
-    def __init__(self, cid, spacing=0.1):
+    def __init__(self, cid):
         Greenlet.__init__(self)
         self.cid = cid
         self.uid = get_uid(self.__class__, cid)
-        self.spacing = spacing
         self._lock = BoundedSemaphore()
         self._lock.acquire() # locking semaphore
         self._new_data = None
+
+        self.config = {}
+        section_name = get_full_class_name(self.__class__)
+        if config.CONF.has_section(section_name):
+            opts = config.CONF.items(section_name)
+            self.config = {k: v for k, v in opts}
+        self.spacing = float(self.config.get('spacing', '0.1'))
 
     def _run(self):
         while True:
@@ -57,8 +66,8 @@ class BaseSensor(Greenlet):
 
 
 class BaseRMQSensor(BaseSensor):
-    def __init__(self, cid, **kwargs):
-        super(BaseRMQSensor, self).__init__(cid, **kwargs)
+    def __init__(self, cid):
+        super(BaseRMQSensor, self).__init__(cid)
         # getting values from config
         rabbit_host = config.get('rabbit_host')
         rabbit_port = config.get('rabbit_port')
@@ -72,8 +81,8 @@ class BaseRMQSensor(BaseSensor):
 
 
 class BaseRedisSensor(BaseSensor):
-    def __init__(self, cid, **kwargs):
-        super(BaseRedisSensor, self).__init__(cid, **kwargs)
+    def __init__(self, cid):
+        super(BaseRedisSensor, self).__init__(cid)
         # getting values from config
         redis_host = config.get('redis_host')
         redis_port = config.get('redis_port')
