@@ -8,6 +8,9 @@ def _to_str():
 def _to_int():
     return lambda o: int(o)
 
+def _to_float():
+    return lambda o: float(o)
+
 def _to_list():
     def fn(o):
         return o.split(',')
