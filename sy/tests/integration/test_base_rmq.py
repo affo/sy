@@ -7,7 +7,7 @@ from sy.api import RMQConsumer
 class BaseRMQTestCase(RMQTestCase):
     def onRabbitUp(self):
         self.rmq = RMQConsumer()
-        self.s = DummyRMQSensor('non-existent-container')
+        self.s = DummyRMQSensor({'cid': 'non-existent-container'})
         self.s.start()
 
     def onRabbitDown(self):

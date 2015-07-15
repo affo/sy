@@ -7,7 +7,7 @@ from sy.tests.dummy import DummySensor
 class BaseSensorTest(unittest.TestCase):
 
     def setUp(self):
-        self.s = DummySensor('non-existent-container')
+        self.s = DummySensor({'cid': 'non-existent-container'})
 
     def tearDown(self):
         self.s.kill()

@@ -1,5 +1,7 @@
 from gevent import sleep, Greenlet
 from gevent.coros import BoundedSemaphore
+from schematics.models import Model
+from schematics.types import FloatType, StringType
 from sy import config, log, api
 from sy.exceptions import SensorError
 import json
@@ -12,7 +14,7 @@ def get_full_class_name(clazz):
 def get_uid(sensor_class, cid):
     return '_'.join([cid, get_full_class_name(sensor_class)])
 
-class BaseSensor(Greenlet):
+class BaseSensor(Greenlet, Model):
     """
     Base class for sensors.  
     Each sensor is associated with a Docker container by its 
@@ -25,20 +27,17 @@ class BaseSensor(Greenlet):
     Each call to `next` value is blocking for a time declared 
     on `__init__` of the sensor through `spacing` parameter.
     """
-    def __init__(self, cid):
+    cid = StringType(required=True)
+    spacing = FloatType(default=0.1)
+
+    def __init__(self, *args, **kwargs):
         Greenlet.__init__(self)
-        self.cid = cid
-        self.uid = get_uid(self.__class__, cid)
+        Model.__init__(self, *args, **kwargs)
+
+        self.uid = get_uid(self.__class__, self.cid)
         self._lock = BoundedSemaphore()
         self._lock.acquire() # locking semaphore
         self._new_data = None
-
-        self.config = {}
-        section_name = get_full_class_name(self.__class__)
-        if config.CONF.has_section(section_name):
-            opts = config.CONF.items(section_name)
-            self.config = {k: v for k, v in opts}
-        self.spacing = float(self.config.get('spacing', '0.1'))
 
     def _run(self):
         while True:
@@ -69,8 +68,8 @@ class BaseRMQSensor(BaseSensor):
     def _gen_routing_key(self):
         return self.__class__.__name__.lower() + '.' + str(self.cid)
 
-    def __init__(self, cid):
-        super(BaseRMQSensor, self).__init__(cid)
+    def __init__(self, *args, **kwargs):
+        super(BaseRMQSensor, self).__init__(*args, **kwargs)
         # getting values from config
         rabbit_host = config.get('rabbit_host')
         rabbit_port = config.get('rabbit_port')
@@ -85,8 +84,8 @@ class BaseRMQSensor(BaseSensor):
 
 
 class BaseRedisSensor(BaseSensor):
-    def __init__(self, cid):
-        super(BaseRedisSensor, self).__init__(cid)
+    def __init__(self, *args, **kwargs):
+        super(BaseRedisSensor, self).__init__(*args, **kwargs)
         # getting values from config
         redis_host = config.get('redis_host')
         redis_port = config.get('redis_port')

@@ -3,27 +3,28 @@ from sy import config, log
 from sy.sensors import TYPES
 from sy.sensors.base import get_uid
 from sy.exceptions import DaemonError, InvalidSensorType, NoSensorFound, BadJsonInput
+from schematics.exceptions import ValidationError
 from flask import Flask, jsonify, request
 
 LOG = log.get(__name__)
 _endpoints = ['index', 'get_sensor_types', 'get_sensors', 'add_sensor', 'del_sensor']
 daemon = Flask(__name__)
 
-def validate_request():
-    req_data = request.form
-    allowed_keys = ('cid', 'stype')
-    request_errors = []
+def pop_stype(json_input):
+    try:
+        stype = json_input['stype']
+        del json_input['stype']
+        return stype
+    except KeyError:
+        raise ValidationError('Sensor type (`stype`) must be given.')
 
-    for k in req_data.keys():
-        if k not in allowed_keys:
-            request_errors.append(k)
-
-    if request_errors:
-        raise BadJsonInput(
-            request_errors,
-            method=request.method,
-            url=request.path,
-        )
+def pop_cid(json_input):
+    try:
+        cid = json_input['cid']
+        del json_input['cid']
+        return cid
+    except KeyError:
+        raise ValidationError('Container ID (`cid`) must be given.')
 
 
 class SensorsStatus(object):
@@ -31,7 +32,7 @@ class SensorsStatus(object):
         super(SensorsStatus, self).__init__()
         self.sensors = {} # dict sensor_uid: sensor_object
 
-    def add(self, cid, stype):
+    def add(self, init_dict, stype):
         """
         See `sy.sensors` for available
         sensor types (`__init__.py`).
@@ -40,13 +41,17 @@ class SensorsStatus(object):
             raise InvalidSensorType(stype)
 
         sensor_class = TYPES[stype]
-        uid = get_uid(sensor_class, cid)
+        sensor = sensor_class(init_dict)
+        # if init_dict is malformed, this will
+        # raise a ModelValidationError (subclass of ValidationError)
+        sensor.validate()
+        uid = sensor.uid
+
         if uid in self.sensors:
-            LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, cid))
+            LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, sensor.cid))
             return uid
 
         # we can add the new sensor
-        sensor = sensor_class(cid)
         sensor.start()
         self.sensors[uid] = sensor
         return uid
@@ -69,6 +74,12 @@ status = SensorsStatus()
 @daemon.errorhandler(DaemonError)
 def handle_wrong_json_input(error):
     resp = jsonify(error.to_dict())
+    resp.status_code = 400
+    return resp
+
+@daemon.errorhandler(ValidationError)
+def handle_validation_error(error):
+    resp = jsonify(json.loads(error.message))
     resp.status_code = 400
     return resp
 
@@ -117,11 +128,8 @@ def add_sensor():
         "stype": "one of the available sensors types"
     }
     """
-    validate_request(request.form)
-
-    cid = request.form['cid']
-    stype = request.form['stype']
-    uid = status.add(cid, stype)
+    stype = pop_stype(request.form)
+    uid = status.add(request.form, stype)
     return jsonify({'uid': uid}), 201
 
 @daemon.route('/sensors', methods=['DELETE',])
@@ -136,10 +144,8 @@ def del_sensor():
         "stype": "the type of the sensor to be stopped"
     }
     """
-    validate_request(request.form)
-
-    cid = request.form['cid']
-    stype = request.form['stype']
+    stype = pop_stype(request.form)
+    cid = pop_cid(request.form)
     status.remove(cid, stype)
     return '', 204
 

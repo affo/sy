@@ -8,7 +8,7 @@ class BaseRedisTestCase(RedisTestCase):
     def onRedisUp(self):
         self.cid = 'non-existent-container'
         self.redis = RedisAPI()
-        self.s = DummyRedisSensor(self.cid)
+        self.s = DummyRedisSensor({'cid': self.cid})
         self.s.start()
 
     def onRedisDown(self):
