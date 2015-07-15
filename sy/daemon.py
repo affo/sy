@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 import sys, json
 from sy import config, log
 from sy.sensors import TYPES
