@@ -9,15 +9,15 @@ class SensorStatusTestCase(TestCase):
         self.status = SensorsStatus()
 
     def test_add_adds(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy')
+        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
         sensors = self.status.sensors.keys()
         self.assertEqual(len(sensors), 1)
         sensor = sensors[0]
         self.assertEqual(sensor, uid)
 
     def test_add_same_sensor_does_not_change(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy')
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy')
+        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
+        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
         sensors = self.status.sensors.keys()
         self.assertEqual(len(sensors), 1)
         sensor = sensors[0]
@@ -25,10 +25,10 @@ class SensorStatusTestCase(TestCase):
 
     def test_add_invalid_sensor_type(self):
         with self.assertRaises(syex.InvalidSensorType):
-            uid = self.status.add({'cid': 'foo_cid'}, 'invalid_sensor_type')
+            uid = self.status.add({'cid': 'foo_cid'}, 'invalid_sensor_type').uid
 
     def test_remove_removes(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy')
+        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
         self.status.remove('foo_cid', 'dummy')
         self.assertEqual(len(self.status.sensors), 0)
 

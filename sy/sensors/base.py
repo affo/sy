@@ -2,6 +2,7 @@ from gevent import sleep, Greenlet
 from gevent.coros import BoundedSemaphore
 from schematics.models import Model
 from schematics.types import FloatType, StringType
+from schematics.types.serializable import serializable
 from sy import config, log, api
 from sy.exceptions import SensorError
 import json
@@ -30,11 +31,14 @@ class BaseSensor(Greenlet, Model):
     cid = StringType(required=True)
     spacing = FloatType(default=0.1)
 
+    @serializable
+    def uid(self):
+        return get_uid(self.__class__, self.cid)
+
     def __init__(self, *args, **kwargs):
         Greenlet.__init__(self)
         Model.__init__(self, *args, **kwargs)
 
-        self.uid = get_uid(self.__class__, self.cid)
         self._lock = BoundedSemaphore()
         self._lock.acquire() # locking semaphore
         self._new_data = None

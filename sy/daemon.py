@@ -51,12 +51,12 @@ class SensorsStatus(object):
 
         if uid in self.sensors:
             LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, sensor.cid))
-            return uid
+            return sensor
 
         # we can add the new sensor
         sensor.start()
         self.sensors[uid] = sensor
-        return uid
+        return sensor
 
     def remove(self, cid, stype):
         if stype not in TYPES:
@@ -131,8 +131,8 @@ def add_sensor():
     }
     """
     stype = pop_stype(request.form)
-    uid = status.add(request.form, stype)
-    return jsonify({'uid': uid}), 201
+    sensor = status.add(request.form, stype)
+    return jsonify(sensor.to_primitive()), 201
 
 @daemon.route('/sensors', methods=['DELETE',])
 def del_sensor():
