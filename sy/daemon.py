@@ -1,32 +1,20 @@
 from gevent import monkey
 monkey.patch_all()
-import sys, json
+import sys
 from sy import config, log
 from sy.sensors import TYPES
 from sy.sensors.base import get_uid
 from sy.exceptions import DaemonError, InvalidSensorType, NoSensorFound, BadJsonInput
-from schematics.exceptions import ValidationError
+from schematics.exceptions import ValidationError, ConversionError
 from flask import Flask, jsonify, request
 
 LOG = log.get(__name__)
 _endpoints = ['index', 'get_sensor_types', 'get_sensors', 'add_sensor', 'del_sensor']
 daemon = Flask(__name__)
 
-def pop_stype(json_input):
-    try:
-        stype = json_input['stype']
-        del json_input['stype']
-        return stype
-    except KeyError:
-        raise ValidationError('Sensor type (`stype`) must be given.')
-
-def pop_cid(json_input):
-    try:
-        cid = json_input['cid']
-        del json_input['cid']
-        return cid
-    except KeyError:
-        raise ValidationError('Container ID (`cid`) must be given.')
+def validate_stype(stype):
+    if stype not in TYPES:
+        raise InvalidSensorType(stype)
 
 
 class SensorsStatus(object):
@@ -39,9 +27,6 @@ class SensorsStatus(object):
         See `sy.sensors` for available
         sensor types (`__init__.py`).
         """
-        if stype not in TYPES:
-            raise InvalidSensorType(stype)
-
         sensor_class = TYPES[stype]
         sensor = sensor_class(init_dict)
         # if init_dict is malformed, this will
@@ -59,9 +44,6 @@ class SensorsStatus(object):
         return sensor
 
     def remove(self, cid, stype):
-        if stype not in TYPES:
-            raise InvalidSensorType(stype)
-
         sensor_class = TYPES[stype]
         uid = get_uid(sensor_class, cid)
         try:
@@ -80,8 +62,9 @@ def handle_wrong_json_input(error):
     return resp
 
 @daemon.errorhandler(ValidationError)
+@daemon.errorhandler(ConversionError)
 def handle_validation_error(error):
-    resp = jsonify(json.loads(error.message))
+    resp = jsonify(error.message)
     resp.status_code = 400
     return resp
 
@@ -118,26 +101,27 @@ def get_sensors():
              for s in status.sensors.values()}
     return jsonify(body)
 
-@daemon.route('/sensors', methods=['POST',])
-def add_sensor():
+@daemon.route('/sensors/<stype>', methods=['POST',])
+def add_sensor(stype):
     """
-    /sensors (`POST`)
+    /sensors/<sensor_type> (`POST`)
 
     Adds and starts a new sensor from the given json input.
     Example:
     {
         "cid": "container name or id",
-        "stype": "one of the available sensors types"
     }
     """
-    stype = pop_stype(request.form)
+    validate_stype(stype)
     sensor = status.add(request.form, stype)
-    return jsonify(sensor.to_primitive()), 201
+    body = jsonify(sensor.to_primitive())
+    LOG.info('Sensor created: {}'.format(body))
+    return body, 201
 
-@daemon.route('/sensors', methods=['DELETE',])
-def del_sensor():
+@daemon.route('/sensors/<stype>/<cid>', methods=['DELETE',])
+def del_sensor(stype, cid):
     """
-    /sensors (`DELETE`)
+    /sensors/<sensor_type>/<container_id> (`DELETE`)
 
     Stops and removes an active sensor from the given input.
     Example:
@@ -146,9 +130,9 @@ def del_sensor():
         "stype": "the type of the sensor to be stopped"
     }
     """
-    stype = pop_stype(request.form)
-    cid = pop_cid(request.form)
+    validate_stype(stype)
     status.remove(cid, stype)
+    LOG.info('Sensor with cid {} and type {} deleted'.format(cid, stype))
     return '', 204
 
 if __name__ == '__main__':
