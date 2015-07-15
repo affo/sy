@@ -43,7 +43,7 @@ class SensorsStatus(object):
         uid = get_uid(sensor_class, cid)
         if uid in self.sensors:
             LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, cid))
-            return
+            return uid
 
         # we can add the new sensor
         sensor = sensor_class(cid)
