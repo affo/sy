@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 from sy.tests.integration.base import RedisTestCase
 from sy.tests.dummy import DummyRedisSensor
 from sy.api import RedisAPI

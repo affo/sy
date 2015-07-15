@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 from unittest import TestCase
 from sy.daemon import SensorsStatus
 from sy import exceptions as syex

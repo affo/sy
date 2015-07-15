@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 from sy.tests.integration.base import RMQTestCase
 from sy.tests.dummy import DummyRMQSensor
 from sy.api import RMQConsumer

@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 import unittest
 from sy.exceptions import SensorError
 from sy.tests.dummy import DummySensor
