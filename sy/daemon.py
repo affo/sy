@@ -115,8 +115,8 @@ def add_sensor(stype):
     """
     validate_stype(stype)
     sensor = status.add(request.form, stype)
+    LOG.info('Sensor created: {}'.format(sensor.to_primitive()))
     body = jsonify(sensor.to_primitive())
-    LOG.info('Sensor created: {}'.format(body))
     return body, 201
 
 @daemon.route('/sensors/<stype>/<cid>', methods=['DELETE',])
