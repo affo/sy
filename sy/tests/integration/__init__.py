@@ -9,6 +9,21 @@ docker_client = Client(base_url='unix://var/run/docker.sock')
 RMQ_CID = None
 REDIS_CID = None
 
+def wait_for_rabbit():
+    timeout = 30
+    count = 0
+    while count < timeout:
+        try:
+            # Supposing tests to run on localhost
+            pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+            return
+        except pika.exceptions.IncompatibleProtocolError:
+            LOG.debug('Waiting for rabbitmq container to be up')
+            time.sleep(1)
+            count += 1
+    else:
+        raise Exception('Too much time passed waiting on Rabbit to be up. Check your Docker configuration')
+
 def start_rabbit():
     # launch a rabbitmq container and bind it to port given by config:
     # docker run -d -e RABBITMQ_NODENAME=test-rabbit --name test-rabbit -p <rabbit_port>:5672 rabbitmq:3
@@ -28,36 +43,15 @@ def start_rabbit():
     )['Id']
     # now we can start it
     docker_client.start(cid)
-
-    # wait for rabbit to be up
-    timeout = 30
-    count = 0
-    while count < timeout:
-        try:
-            # Supposing tests to run on localhost
-            pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-            return cid
-        except pika.exceptions.IncompatibleProtocolError:
-            LOG.debug('Waiting for rabbitmq container to be up')
-            time.sleep(1)
-            count += 1
-    else:
-        raise Exception('Too much time passed waiting on Rabbit to be up. Check your Docker configuration')
+    wait_for_rabbit()
+    return cid
 
 def refresh_rabbit():
     global RMQ_CID
     assert RMQ_CID is not None, "No RabbitMQ container found."
 
-    cmds = []
-    eid = docker_client.exec_create(RMQ_CID, 'rabbitmqctl stop_app')['Id']
-    cmds.append(eid)
     eid = docker_client.exec_create(RMQ_CID, 'rabbitmqctl reset')['Id']
-    cmds.append(eid)
-    eid = docker_client.exec_create(RMQ_CID, 'rabbitmqctl start_app')['Id']
-    cmds.append(eid)
-
-    for cmd in cmds:
-        docker_client.exec_start(cmd)
+    docker_client.exec_start(eid)
 
 def start_redis():
     # launch a redis container and bind it to port given by config:
@@ -67,7 +61,7 @@ def start_redis():
     # then create the container
     redis_port = config.get('redis_port')
     cid = docker_client.create_container(
-            image='redis:latest',
+        image='redis:latest',
         detach=True,
         name='test-redis',
         ports=[redis_port],
@@ -86,6 +80,26 @@ def refresh_redis():
     eid = docker_client.exec_create(REDIS_CID, 'redis-cli flushall')['Id']
     docker_client.exec_start(eid)
 
+def start_busybox(sleep_time=3):
+    docker_client.pull('busybox', tag='latest')
+    # then create the container
+    cid = docker_client.create_container(
+        image='busybox:latest',
+        command='sleep ' + str(sleep_time),
+        detach=True,
+    )['Id']
+    # now we can start it
+    docker_client.start(cid)
+    return cid
+
+def remove_container(cid):
+    docker_client.remove_container(
+        container=cid,
+        force=True
+    )
+
+#### package level fixtures
+
 def setup_package():
     global RMQ_CID, REDIS_CID
     assert RMQ_CID is None, "RabbitMQ is up. Remove it first."
@@ -99,13 +113,7 @@ def teardown_package():
     assert RMQ_CID is not None, "No RabbitMQ container to stop."
     assert REDIS_CID is not None, "No Redis container to stop."
 
-    docker_client.remove_container(
-        container=RMQ_CID,
-        force=True
-    )
-    docker_client.remove_container(
-        container=REDIS_CID,
-        force=True
-    )
+    remove_container(RMQ_CID)
+    remove_container(REDIS_CID)
     RMQ_CID = None
     REDIS_CID = None
