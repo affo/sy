@@ -1,5 +1,5 @@
 from gevent import sleep, Greenlet
-from gevent.coros import BoundedSemaphore
+from gevent.coros import Semaphore
 from schematics.models import Model
 from schematics.types import FloatType, StringType
 from schematics.types.serializable import serializable
@@ -42,7 +42,7 @@ class BaseSensor(Greenlet, Model):
         docker_url = config.get('docker_url')
         self.container = api.DockerAPI(self.cid, docker_url)
 
-        self._lock = BoundedSemaphore()
+        self._lock = Semaphore()
         self._lock.acquire() # locking semaphore
         self._new_data = None
 
