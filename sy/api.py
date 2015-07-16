@@ -1,6 +1,7 @@
 import json, pika, redis
 from docker import Client as DockerClient
 from sy import log
+from gevent import sleep
 
 EXCHANGE_NAME = 'monitor'
 KEY_TOPIC = 'sensors'
@@ -17,6 +18,17 @@ class RMQBase(object):
             _connection = pika.BlockingConnection(
                 pika.ConnectionParameters(rabbit_host, rabbit_port)
             )
+
+            # when somebody waits for too long (e.g. consuming),
+            # we need to give control to another co-routine
+            # in order to make someone produce something
+            def yield_control():
+                LOG.debug('{}: timeout elapsed on connection, yielding control...'.format(self.__class__.__name__))
+                sleep(0.1)
+                # re-adding timeout
+                _connection.add_timeout(0.1, yield_control)
+
+            _connection.add_timeout(0.1, yield_control)
 
         self._channel = _connection.channel()
         self._channel.exchange_declare(
@@ -36,7 +48,7 @@ class RMQPublisher(RMQBase):
             routing_key=self.routing_key,
             body=json.dumps(data)
         )
-        LOG.debug("On {} sent:{}".format(self.routing_key, data))
+        LOG.debug("With topic {}, sent: {}".format(self.routing_key, data))
 
 
 class RMQConsumer(RMQBase):
