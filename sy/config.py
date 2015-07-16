@@ -22,6 +22,7 @@ OPTS = {
     'rabbit_port': ('5672', _to_int),
     'redis_host': ('localhost', _to_str),
     'redis_port': ('6379', _to_int),
+    'docker_url': ('unix://var/run/docker.sock', _to_str),
 }
 
 CONF = cp.ConfigParser(defaults={k: v[0] for k, v in OPTS.items()})

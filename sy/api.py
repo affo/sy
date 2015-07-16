@@ -1,4 +1,5 @@
 import json, pika, redis
+from docker import Client as DockerClient
 from sy import log
 
 EXCHANGE_NAME = 'monitor'
@@ -79,3 +80,20 @@ class RedisAPI(object):
         res = self.cli.set(cid, data)
         LOG.debug('{{ {} : {} }} stored.'.format(cid, data))
         return res
+
+
+class DockerAPI(object):
+    def __init__(self, cid, base_url="unix://var/run/docker.sock"):
+        super(DockerAPI, self).__init__()
+        self.cid = cid
+        self.docker = DockerClient(base_url=base_url)
+
+    def inspect(self):
+        return self.docker.inspect_container(self.cid)
+
+    def top(self):
+        return self.docker.top(self.cid)
+
+    def exec_cmd(self, cmd, detach=True):
+        eid = self.docker.exec_create(self.cid, cmd)['Id']
+        return self.docker.exec_start(eid, detach=detach)

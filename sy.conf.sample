@@ -3,3 +3,4 @@ rabbit_host = localhost
 rabbit_port = 5672
 redis_host = localhost
 redis_port = 3679
+docker_url = unix://var/run/docker.sock
