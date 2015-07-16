@@ -97,4 +97,4 @@ class BaseRedisSensor(BaseSensor):
 
     def _store(self, data):
         # TODO use return value?
-        self.redisapi.set(self.cid, data)
+        self.redisapi.set(self.uid, data)

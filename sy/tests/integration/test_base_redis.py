@@ -17,5 +17,5 @@ class BaseRedisTestCase(RedisTestCase):
     def test_values(self):
         expected = next(self.s.get_data())
 
-        real = self.redis.get(self.cid)
+        real = self.redis.get(self.s.uid)
         self.assertEqual(expected, real)
