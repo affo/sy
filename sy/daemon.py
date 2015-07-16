@@ -4,7 +4,7 @@ import sys
 from sy import config, log
 from sy.sensors import TYPES
 from sy.sensors.base import get_uid
-from sy.exceptions import DaemonError, InvalidSensorType, NoSensorFound, BadJsonInput
+from sy.exceptions import SensorError, DaemonError, InvalidSensorType, NoSensorFound, BadJsonInput
 from schematics.exceptions import ValidationError, ConversionError
 from flask import Flask, jsonify, request
 
@@ -61,6 +61,7 @@ def handle_wrong_json_input(error):
     resp.status_code = 400
     return resp
 
+@daemon.errorhandler(SensorError)
 @daemon.errorhandler(ValidationError)
 @daemon.errorhandler(ConversionError)
 def handle_validation_error(error):
