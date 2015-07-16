@@ -39,6 +39,9 @@ class BaseSensor(Greenlet, Model):
         Greenlet.__init__(self)
         Model.__init__(self, *args, **kwargs)
 
+        docker_url = config.get('docker_url')
+        self.container = api.DockerAPI(self.cid, docker_url)
+
         self._lock = BoundedSemaphore()
         self._lock.acquire() # locking semaphore
         self._new_data = None
