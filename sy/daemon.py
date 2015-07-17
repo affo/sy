@@ -36,7 +36,7 @@ class SensorsStatus(object):
 
         if uid in self.sensors:
             LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, sensor.cid))
-            return sensor
+            return self.sensors[uid]
 
         # we can add the new sensor
         sensor.start()
@@ -138,4 +138,5 @@ def del_sensor(stype, cid):
 
 if __name__ == '__main__':
     daemon.debug = True
-    daemon.run()
+    port = config.get('sy_port')
+    daemon.run(port=port)
