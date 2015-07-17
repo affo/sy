@@ -80,12 +80,13 @@ def refresh_redis():
     eid = docker_client.exec_create(REDIS_CID, 'redis-cli flushall')['Id']
     docker_client.exec_start(eid)
 
-def start_busybox(sleep_time=3):
+def start_busybox(name, sleep_time):
     docker_client.pull('busybox', tag='latest')
     # then create the container
     cid = docker_client.create_container(
         image='busybox:latest',
         command='sleep ' + str(sleep_time),
+        name=name,
         detach=True,
     )['Id']
     # now we can start it

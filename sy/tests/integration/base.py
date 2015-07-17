@@ -2,8 +2,8 @@ import unittest
 from sy.tests.integration import refresh_rabbit, refresh_redis, start_busybox, remove_container
 
 class LaunchTestContainersTestCase(unittest.TestCase):
-    def _start_test_container(self, time=3):
-        cid = start_busybox(time)
+    def _start_test_container(self, name='test', time=10):
+        cid = start_busybox(name, time)
         self.test_containers.append(cid)
         return cid
 
