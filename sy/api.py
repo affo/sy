@@ -63,18 +63,17 @@ class RMQConsumer(RMQBase):
         )
 
     def consume(self, n_msg=0):
-        try:
-            # n_msg = 0 means infinite
-            for method, properties, body in self._channel.consume(self._q_name):
-                LOG.info('On {} got: {}'.format(method.routing_key, body))
-                self._channel.basic_ack(method.delivery_tag)
-                yield method, properties, json.loads(body)
+        # n_msg = 0 means infinite
+        for method, properties, body in self._channel.consume(self._q_name):
+            LOG.info('On {} got: {}'.format(method.routing_key, body))
+            self._channel.basic_ack(method.delivery_tag)
+            yield method, properties, json.loads(body)
 
-                if n_msg != 0 and method.delivery_tag == n_msg:
-                    break
-        except KeyboardInterrupt:
-            self._connection.close()
+            if n_msg != 0 and method.delivery_tag == n_msg:
+                break
 
+    def close_connection(self):
+        _connection.close()
 
 class RedisAPI(object):
     def __init__(self, redis_host='localhost', redis_port=6379):
