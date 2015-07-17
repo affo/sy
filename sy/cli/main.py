@@ -1,5 +1,6 @@
 import argparse, requests, json
 from sy import config, log
+from sy.api import RMQConsumer
 
 LOG = log.get(__name__)
 
@@ -49,6 +50,15 @@ def types(args):
     path = _get_path('stypes')
     _print_resp(requests.get(path))
 
+def rmq(args):
+    cons = RMQConsumer(args.topic)
+    try:
+        for _, _, msg in cons.consume():
+            print msg
+    except KeyboardInterrupt:
+        cons.close_connection()
+        print 'Connection closed'
+
 def main():
     parser = argparse.ArgumentParser(
         description=
@@ -63,18 +73,20 @@ def main():
     parser_del = subparsers.add_parser('remove', help='Remove an existing sensor')
     parser_list = subparsers.add_parser('list', help='List active sensors')
     parser_stypes = subparsers.add_parser('types', help='List available sensor types')
+    parser_rmq = subparsers.add_parser('listen', help='Display Messages from sensors')
 
     parser_add.add_argument('cid', help='The container\'s id')
     parser_add.add_argument('stype', help='The sensor type')
     parser_add.add_argument('--init-args', default='', dest='data', help='Other init args as JSON input')
     parser_del.add_argument('cid', help='The container\'s id')
     parser_del.add_argument('stype', help='The sensor type')
+    parser_rmq.add_argument('-t', dest='topic', default='#', help='The topic to listen to')
 
     parser_add.set_defaults(func=add)
     parser_del.set_defaults(func=remove)
     parser_list.set_defaults(func=slist)
     parser_stypes.set_defaults(func=types)
-    #parser.add_argument('-t', dest='topic', default='sensors.*',
-    #    help='The topic to subscribe to')
+    parser_rmq.set_defaults(func=rmq)
+
     args = parser.parse_args()
     args.func(args)
