@@ -2,7 +2,7 @@ from gevent import monkey
 monkey.patch_all()
 import argparse, requests, json
 from sy import config, log
-from sy.api import RMQConsumer
+from sy.api import RMQConsumer, RedisAPI
 
 LOG = log.get(__name__)
 
@@ -53,13 +53,22 @@ def types(args):
     _print_resp(requests.get(path))
 
 def rmq(args):
-    cons = RMQConsumer(args.topic)
+    host = config.get('rabbit_host')
+    port = config.get('rabbit_port')
+    cons = RMQConsumer(args.topic, host, port)
+
     try:
-        for _, _, msg in cons.consume():
-            print msg
+        for method, _, msg in cons.consume():
+            print '{}: {}'.format(method.routing_key, msg)
     except KeyboardInterrupt:
         cons.close_connection()
         print 'Connection closed'
+
+def redis(args):
+    host = config.get('redis_host')
+    port = config.get('redis_port')
+    red = RedisAPI(host, port)
+    print str(red.get(args.uid))
 
 def main():
     parser = argparse.ArgumentParser(
@@ -76,6 +85,7 @@ def main():
     parser_list = subparsers.add_parser('list', help='List active sensors')
     parser_stypes = subparsers.add_parser('types', help='List available sensor types')
     parser_rmq = subparsers.add_parser('listen', help='Display Messages from sensors')
+    parser_redis = subparsers.add_parser('get', help='Get persisted data by key')
 
     parser_add.add_argument('cid', help='The container\'s id')
     parser_add.add_argument('stype', help='The sensor type')
@@ -83,12 +93,14 @@ def main():
     parser_del.add_argument('cid', help='The container\'s id')
     parser_del.add_argument('stype', help='The sensor type')
     parser_rmq.add_argument('-t', dest='topic', default='#', help='The topic to listen to')
+    parser_redis.add_argument('uid', help='The uid of the active sensor that is persisting data (`sy list` to get uids)')
 
     parser_add.set_defaults(func=add)
     parser_del.set_defaults(func=remove)
     parser_list.set_defaults(func=slist)
     parser_stypes.set_defaults(func=types)
     parser_rmq.set_defaults(func=rmq)
+    parser_redis.set_defaults(func=redis)
 
     args = parser.parse_args()
     args.func(args)
