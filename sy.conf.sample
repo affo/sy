@@ -1,4 +1,6 @@
 [DEFAULT]
+sy_host = localhost
+sy_port = 5000
 rabbit_host = localhost
 rabbit_port = 5672
 redis_host = localhost

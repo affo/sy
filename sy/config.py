@@ -18,6 +18,8 @@ def _to_list():
 
 OPTS = {
     # option_name: (default_value, cast_function)
+    'sy_host': ('localhost', _to_str),
+    'sy_port': ('5000', _to_int),
     'rabbit_host': ('localhost', _to_str),
     'rabbit_port': ('5672', _to_int),
     'redis_host': ('localhost', _to_str),
