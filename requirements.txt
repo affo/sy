@@ -5,3 +5,4 @@ redis
 flask
 schematics
 psutil
+requests
