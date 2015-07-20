@@ -1,0 +1,8 @@
+#!venv/bin/python
+from gevent import monkey
+monkey.patch_all()
+import sys
+from sy.daemon import run
+
+if __name__ == '__main__':
+    sys.exit(run())

@@ -1,12 +1,12 @@
-from gevent import monkey
-monkey.patch_all()
-import sys
+import argparse, sys, os
 from sy import config, log
 from sy.sensors import TYPES
 from sy.sensors.base import get_uid
 from sy.exceptions import SensorError, DaemonError, InvalidSensorType, NoSensorFound, BadJsonInput
 from schematics.exceptions import ValidationError, ConversionError
 from flask import Flask, jsonify, request
+import subprocess as sp
+
 
 LOG = log.get(__name__)
 _endpoints = ['index', 'get_sensor_types', 'get_sensors', 'add_sensor', 'del_sensor']
@@ -151,7 +151,26 @@ def del_sensor(stype, cid):
     LOG.info('Sensor with cid {} and type {} deleted'.format(cid, stype))
     return '', 204
 
-if __name__ == '__main__':
-    daemon.debug = True
+def run():
+    parser = argparse.ArgumentParser(
+        description="Client to start Sy's daemon."
+    )
+
+    parser.add_argument('-d', dest='daemon', action='store_true', help='Start server as daemon')
+    parser.add_argument('-D', dest='debug', action='store_true', help='Start server in debug mode')
+    args = parser.parse_args()
+    daemon.debug = args.debug
     port = config.get('sy_port')
-    daemon.run(port=port)
+
+    if args.daemon:
+        #TODO handle better command string
+        cmd = 'python bin/sy-agent'
+        if args.debug:
+            cmd += ' -D'
+
+        DEVNULL = open(os.devnull, 'wb')
+        p = sp.Popen(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
+
+        LOG.debug('Daemon\'s PID: {}'.format(p.pid))
+    else:
+        daemon.run(port=port)
