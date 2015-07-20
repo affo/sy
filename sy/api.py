@@ -79,6 +79,8 @@ class RedisAPI(object):
     def __init__(self, redis_host='localhost', redis_port=6379):
         super(RedisAPI, self).__init__()
         self.cli = redis.StrictRedis(host=redis_host, port=redis_port, db=0)
+        # ping in order to raise error if not redis found
+        self.cli.ping()
 
     def get(self, cid):
         value = self.cli.get(cid)
@@ -98,6 +100,8 @@ class DockerAPI(object):
         super(DockerAPI, self).__init__()
         self.cid = cid
         self.docker = DockerClient(base_url=base_url)
+        # 'ping' docker in order to raise error if docker is down
+        self.docker.info()
 
     def inspect(self):
         return self.docker.inspect_container(self.cid)
