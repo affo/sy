@@ -33,15 +33,17 @@ class SensorsStatus(object):
         # raise a ModelValidationError (subclass of ValidationError)
         sensor.validate()
         uid = sensor.uid
+        warn = ''
 
         if uid in self.sensors:
-            LOG.info('No need to start sensor, {} sensor for {} container already exists.'.format(stype, sensor.cid))
-            return self.sensors[uid]
+            warn = 'No need to start sensor, {} sensor for {} container already exists.'.format(stype, sensor.cid)
+            LOG.warning(warn)
+            return self.sensors[uid], warn
 
         # we can add the new sensor
         sensor.start()
         self.sensors[uid] = sensor
-        return sensor
+        return sensor, warn
 
     def remove(self, cid, stype):
         sensor_class = TYPES[stype]
@@ -53,10 +55,11 @@ class SensorsStatus(object):
             raise NoSensorFound(cid, stype)
 
 
-status = SensorsStatus()
+_status = SensorsStatus()
 
 @daemon.errorhandler(DaemonError)
 def handle_wrong_json_input(error):
+    LOG.error(error.message)
     resp = jsonify(error.to_dict())
     resp.status_code = 400
     return resp
@@ -65,7 +68,8 @@ def handle_wrong_json_input(error):
 @daemon.errorhandler(ValidationError)
 @daemon.errorhandler(ConversionError)
 def handle_validation_error(error):
-    resp = jsonify(error.message)
+    LOG.error(error.message)
+    resp = jsonify({'message': error.message})
     resp.status_code = 400
     return resp
 
@@ -98,8 +102,9 @@ def get_sensors():
 
     Returns all active sensors.
     """
+    global _status
     body = { s.uid: 'ALIVE' if not s.dead else 'DEAD'
-             for s in status.sensors.values()}
+             for s in _status.sensors.values()}
     return jsonify(body)
 
 @daemon.route('/sensors/<stype>', methods=['POST',])
@@ -113,11 +118,20 @@ def add_sensor(stype):
         "cid": "container name or id",
     }
     """
+    global _status
     validate_stype(stype)
-    sensor = status.add(request.form, stype)
-    LOG.info('Sensor created: {}'.format(sensor.to_primitive()))
-    body = jsonify(sensor.to_primitive())
-    return body, 201
+    sensor, warn = _status.add(request.form, stype)
+    status = 201 if not warn else 200
+    data = {
+        'sensor': sensor.to_primitive(),
+        'warning': warn
+    }
+
+    if not warn:
+        LOG.info('Sensor created: {}'.format(sensor.to_primitive()))
+
+    body = jsonify(data)
+    return body, status
 
 @daemon.route('/sensors/<stype>/<cid>', methods=['DELETE',])
 def del_sensor(stype, cid):
@@ -131,8 +145,9 @@ def del_sensor(stype, cid):
         "stype": "the type of the sensor to be stopped"
     }
     """
+    global _status
     validate_stype(stype)
-    status.remove(cid, stype)
+    _status.remove(cid, stype)
     LOG.info('Sensor with cid {} and type {} deleted'.format(cid, stype))
     return '', 204
 

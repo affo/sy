@@ -9,22 +9,22 @@ class SensorStatusTestCase(TestCase):
         self.status = SensorsStatus()
 
     def test_add_adds(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
-        sensors = self.status.sensors.keys()
+        sensor, warn = self.status.add({'cid': 'foo_cid'}, 'dummy')
+        sensors = self.status.sensors
         self.assertEqual(len(sensors), 1)
-        sensor = sensors[0]
-        self.assertEqual(sensor, uid)
+        self.assertEqual(sensor.to_primitive(), sensors[sensor.uid].to_primitive())
+        self.assertEqual(warn, '')
 
     def test_add_same_sensor_does_not_change(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
-        sensors = self.status.sensors.keys()
+        sensor, _ = self.status.add({'cid': 'foo_cid', 'spacing': 42}, 'dummy')
+        _, warn = self.status.add({'cid': 'foo_cid', 'spacing': 43}, 'dummy')
+        sensors = self.status.sensors
         self.assertEqual(len(sensors), 1)
-        sensor = sensors[0]
-        self.assertEqual(sensor, uid)
+        self.assertEqual(sensor.to_primitive(), sensors[sensor.uid].to_primitive())
+        self.assertTrue(warn)
 
     def test_remove_removes(self):
-        uid = self.status.add({'cid': 'foo_cid'}, 'dummy').uid
+        self.status.add({'cid': 'foo_cid'}, 'dummy')
         self.status.remove('foo_cid', 'dummy')
         self.assertEqual(len(self.status.sensors), 0)
 

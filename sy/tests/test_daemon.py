@@ -9,7 +9,7 @@ import json
 class DaemonTestCase(TestCase):
     def setUp(self):
         self.daemon = daemon.daemon.test_client()
-        self.status = daemon.status
+        self.status = daemon._status
 
     def tearDown(self):
         # flush all sensors
@@ -24,7 +24,7 @@ class DaemonTestCase(TestCase):
         resp = self.daemon.post('/sensors/dummy', data=data)
         self.assertEquals(resp.status_code, 201)
 
-        resp_data = json.loads(resp.data)
+        resp_data = json.loads(resp.data)['sensor']
         self.assertTrue('cid' in resp_data.keys())
         self.assertTrue('uid' in resp_data.keys())
         self.assertTrue('spacing' in resp_data.keys())
