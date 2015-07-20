@@ -3,6 +3,8 @@ monkey.patch_all()
 import argparse, requests, json
 from sy import config, log
 from sy.api import RMQConsumer, RedisAPI
+from pika.exceptions import AMQPConnectionError as RMQConnError
+from redis.exceptions import ConnectionError as RedisConnError
 
 LOG = log.get(__name__)
 
@@ -55,11 +57,12 @@ def types(args):
 def rmq(args):
     host = config.get('rabbit_host')
     port = config.get('rabbit_port')
-    cons = RMQConsumer(args.topic, host, port)
-
     try:
+        cons = RMQConsumer(args.topic, host, port)
         for method, _, msg in cons.consume():
             print '{}: {}'.format(method.routing_key, msg)
+    except RMQConnError:
+        print 'No RabbitMQ host found.'
     except KeyboardInterrupt:
         cons.close_connection()
         print 'Connection closed'
@@ -67,8 +70,11 @@ def rmq(args):
 def redis(args):
     host = config.get('redis_host')
     port = config.get('redis_port')
-    red = RedisAPI(host, port)
-    print str(red.get(args.uid))
+    try:
+        red = RedisAPI(host, port)
+        print str(red.get(args.uid))
+    except RedisConnError:
+        print 'No Redis host found'
 
 def main():
     parser = argparse.ArgumentParser(
