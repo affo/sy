@@ -1,5 +1,3 @@
-from gevent import monkey
-monkey.patch_all()
 import argparse, requests, json
 from sy import config, log
 from sy.api import RMQConsumer, RedisAPI
