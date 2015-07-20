@@ -51,7 +51,7 @@ class BaseSensor(Greenlet, Model):
     def _run(self):
         while True:
             self._new_data = self._get()
-            LOG.debug("{} got {}".format(self.__class__.__name__, self._new_data))
+            LOG.debug("{} got {}".format(self.uid, self._new_data))
             self._store(self._new_data)
             self._lock.release()
             sleep(self.spacing)
