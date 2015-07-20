@@ -4,7 +4,7 @@ from schematics.models import Model
 from schematics.types import FloatType, StringType
 from schematics.types.serializable import serializable
 from sy import config, log, api
-from sy.exceptions import SensorError
+from sy.exceptions import SensorError, raise_connection_error
 import json
 
 LOG = log.get(__name__)
@@ -14,6 +14,7 @@ def get_full_class_name(clazz):
 
 def get_uid(sensor_class, cid):
     return '_'.join([cid, get_full_class_name(sensor_class)])
+
 
 class BaseSensor(Greenlet, Model):
     """
@@ -46,6 +47,7 @@ class BaseSensor(Greenlet, Model):
         self._lock.acquire() # locking semaphore
         self._new_data = None
 
+    @raise_connection_error
     def _run(self):
         while True:
             self._new_data = self._get()
@@ -53,7 +55,6 @@ class BaseSensor(Greenlet, Model):
             self._store(self._new_data)
             self._lock.release()
             sleep(self.spacing)
-
 
     def _get(self):
         """Override"""
@@ -75,6 +76,7 @@ class BaseRMQSensor(BaseSensor):
     def _gen_routing_key(self):
         return self.__class__.__name__.lower() + '.' + str(self.cid)
 
+    @raise_connection_error
     def __init__(self, *args, **kwargs):
         super(BaseRMQSensor, self).__init__(*args, **kwargs)
         # getting values from config
@@ -86,11 +88,13 @@ class BaseRMQSensor(BaseSensor):
             rabbit_port=rabbit_port
         )
 
+    @raise_connection_error
     def _store(self, data):
         self.rmqapi.publish(data)
 
 
 class BaseRedisSensor(BaseSensor):
+    @raise_connection_error
     def __init__(self, *args, **kwargs):
         super(BaseRedisSensor, self).__init__(*args, **kwargs)
         # getting values from config
@@ -98,6 +102,7 @@ class BaseRedisSensor(BaseSensor):
         redis_port = config.get('redis_port')
         self.redisapi = api.RedisAPI(redis_host, redis_port)
 
+    @raise_connection_error
     def _store(self, data):
         # TODO use return value?
         self.redisapi.set(self.uid, data)
