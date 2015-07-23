@@ -62,7 +62,7 @@ def _new_logger(name):
     fh.addFilter(filt)
     sh.setFormatter(sf)
     fh.setFormatter(ff)
-    sh.setLevel(logging.DEBUG)
+    sh.setLevel(logging.INFO)
     fh.setLevel(logging.DEBUG)
 
     l.addHandler(sh)
