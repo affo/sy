@@ -65,7 +65,7 @@ class RMQConsumer(RMQBase):
     def consume(self, n_msg=0):
         # n_msg = 0 means infinite
         for method, properties, body in self._channel.consume(self._q_name):
-            LOG.info('On {} got: {}'.format(method.routing_key, body))
+            LOG.debug('On {} got: {}'.format(method.routing_key, body))
             self._channel.basic_ack(method.delivery_tag)
             yield method, properties, json.loads(body)
 
