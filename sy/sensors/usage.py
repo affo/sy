@@ -14,11 +14,11 @@ ALLOWED_USAGE_FNS = [
 
 
 class BaseUsageSensor(BaseRMQSensor):
-    # TODO should specify parameters for functions
-    usage_fn_names = ()
+    # dict composed by psutil_fn_name: kwargs_dict
+    usage_fns = {}
 
     def _validate_usage_fns(self):
-        for name in self.usage_fn_names:
+        for name in self.usage_fns.keys():
             if not name in ALLOWED_USAGE_FNS:
                 raise SensorError('{}: {} is not an allowed usage function'.format(
                     self.__class__.__name__, name))
@@ -38,13 +38,13 @@ class BaseUsageSensor(BaseRMQSensor):
         cmd_index = top['Titles'].index('CMD')
         processes = top['Processes']
         data = {}
-        tot_usages = {fn: 0 for fn in self.usage_fn_names}
+        tot_usages = {fn: 0 for fn in self.usage_fns.keys()}
 
         for proc in processes:
             pid = int(proc[pid_index])
             cmd = proc[cmd_index]
             p = psutil.Process(pid)
-            usages = {fn_name: getattr(p, fn_name)() for fn_name in self.usage_fn_names}
+            usages = {fn_name: getattr(p, fn_name)(**kwargs) for fn_name, kwargs in self.usage_fns.items()}
 
             data[pid] = {
                 'cmd': cmd,
@@ -59,15 +59,18 @@ class BaseUsageSensor(BaseRMQSensor):
 
 
 class CPUPercSensor(BaseUsageSensor):
-    usage_fn_names = ('cpu_percent', )
+    usage_fns = {'cpu_percent': {'interval': 0.1}}
     pass
 
 
 class MemoryPercSensor(BaseUsageSensor):
-    usage_fn_names = ('memory_percent', )
+    usage_fns = {'memory_percent': {}}
     pass
 
 
 class CPUMemoryPercSensor(BaseUsageSensor):
-    usage_fn_names = ('cpu_percent', 'memory_percent')
+    usage_fns = {
+        'cpu_percent': {'interval': 0.1},
+        'memory_percent': {}
+    }
     pass
