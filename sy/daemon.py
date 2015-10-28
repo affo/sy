@@ -171,6 +171,6 @@ def run():
         DEVNULL = open(os.devnull, 'wb')
         p = sp.Popen(cmd.split(), stdout=DEVNULL, stderr=DEVNULL)
 
-        LOG.debug('Daemon\'s PID: {}'.format(p.pid))
+        print 'Daemon\'s PID: {}'.format(p.pid)
     else:
         daemon.run(port=port)
