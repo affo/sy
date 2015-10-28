@@ -1,0 +1,10 @@
+rabbit:
+    image: rabbitmq:3
+    hostname: my-rabbit
+    ports:
+        - 5672:5672
+
+redis:
+    image: redis
+    ports:
+        - 9000:6379
